@@ -21,7 +21,7 @@ namespace PRubick
 
         #region Fields
 
-        private static string VERSION = "v2.0.0.0";
+        private static string VERSION = "v2.0.0.1";
         private static bool menuOn = true;
         private static bool loaded = false;
 
