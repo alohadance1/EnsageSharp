@@ -12,6 +12,8 @@ using Ensage.Common.Extensions;
 using SharpDX;
 using SharpDX.Direct3D9;
 
+using EZGUI;
+
 namespace PRubick
 {
     internal class Rubick
@@ -48,7 +50,7 @@ namespace PRubick
         public static void Init()
         {
             Game.OnUpdate += Game_OnUpdate;
-
+            
             // abilitiesFix
             abilitiesFix.Add("ancient_apparition_ice_blast_release", "ancient_apparition_ice_blast");
         }

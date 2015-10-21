@@ -10,7 +10,7 @@ using Ensage.Common;
 using SharpDX;
 using SharpDX.Direct3D9;
 
-namespace PRubick
+namespace EZGUI
 {
     #region Help classes
     #region Drawer
@@ -125,11 +125,11 @@ namespace PRubick
     }
     #endregion
     #region Other
-    enum ElementType
+    public enum ElementType
     {
         CHECKBOX, TEXT, CATEGORY
     }
-    internal class EzElement
+    public class EzElement
     {
         public ElementType Type = ElementType.TEXT;
         private List<EzElement> Inside = new List<EzElement>();
@@ -137,7 +137,7 @@ namespace PRubick
         public bool isActive = false;
         public Entity Attached = null;
         public string Data = null;
-        public float[] Position = new float[4]{0, 0, 0, 0};
+        public float[] Position = new float[4] { 0, 0, 0, 0 };
         public List<EzElement> GetElements()
         {
             return Inside;
@@ -155,7 +155,7 @@ namespace PRubick
     }
     #endregion
     #endregion
-    internal class EzGUI
+    public class EzGUI
     {
         #region Fields
         private float x = 0;
@@ -266,7 +266,7 @@ namespace PRubick
                     Drawer.DrawShadowText(element.Content, x + xoffset + menuoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
                     break;
                 case ElementType.TEXT:
-                    Drawer.DrawShadowText(element.Content, element.Position[0] + textoffset, element.Position[2], new ColorBGRA(199,199,199, 255));
+                    Drawer.DrawShadowText(element.Content, element.Position[0] + textoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
                     break;
             }
         }
@@ -276,7 +276,7 @@ namespace PRubick
             h = 5 + (Length() * 20);
             Drawer.DrawBox(x, y, w, h, 10, new ColorBGRA(32, 32, 32, 125));
             Drawer.DrawShadowText(title, x + 3, y - 15, new ColorBGRA(199, 199, 199, 255));
-            Drawer.DrawShadowText("EzGUI • KiKRee", x+w-85, y + h - 15, new ColorBGRA(40, 48, 51, 255));
+            Drawer.DrawShadowText("EzGUI • KiKRee", x + w - 85, y + h - 15, new ColorBGRA(40, 48, 51, 255));
         }
         #endregion
 
@@ -311,7 +311,8 @@ namespace PRubick
                 cachedCount = i;
                 Utils.Sleep(125, "ezmenu_count");
                 return cachedCount;
-            } else return cachedCount;
+            }
+            else return cachedCount;
         }
         #endregion
 
@@ -321,7 +322,7 @@ namespace PRubick
             if (Game.MouseScreenPosition.X >= pos[0] && Game.MouseScreenPosition.X <= pos[1] && Game.MouseScreenPosition.Y >= pos[2] && Game.MouseScreenPosition.Y <= pos[3]) { return true; }
             else return false;
         }
-        
+
         public void MouseClick(EzElement cat)
         {
             foreach (EzElement element in cat.GetElements())
