@@ -13,20 +13,139 @@ using SharpDX.Direct3D9;
 namespace PRubick
 {
     #region Help classes
+    #region Drawer
+    internal class Drawer
+    {
+        #region Fields
+        private static Line line;
+        private static Font font;
+        private static EzGUI owner;
+        #endregion
+
+        public static void Init(EzGUI _owner)
+        {
+            owner = _owner;
+            line = new Line(Drawing.Direct3DDevice9);
+            font = new Font(
+            Drawing.Direct3DDevice9,
+            new FontDescription
+            {
+                FaceName = "Tahoma",
+                Height = 15,
+                OutputPrecision = FontPrecision.Outline,
+                Quality = FontQuality.Proof
+            });
+            Drawing.OnPreReset += Drawing_OnPreReset;
+            Drawing.OnPostReset += Drawing_OnPostReset;
+            Drawing.OnEndScene += Drawing_OnEndScene;
+        }
+
+        #region Drawing
+
+        private static void Drawing_OnEndScene(EventArgs args)
+        {
+            if (!Game.IsInGame) return;
+            if (Game.IsKeyDown(0x2E)) { owner.isMoving = true; }
+            else owner.isMoving = false;
+            if (owner.isVisible) owner.Draw();
+        }
+
+        private static void Drawing_OnPostReset(EventArgs args)
+        {
+            Drawer.GetFont().OnResetDevice();
+        }
+
+        private static void Drawing_OnPreReset(EventArgs args)
+        {
+            Drawer.GetFont().OnLostDevice();
+        }
+
+        #endregion
+
+        #region Methods
+        public static void DrawLine(float x1, float y1, float x2, float y2, float w, ColorBGRA Color)
+        {
+            Vector2[] vLine = new Vector2[2] { new Vector2(x1, y1), new Vector2(x2, y2) };
+
+            line.GLLines = true;
+            line.Antialias = true;
+            line.Width = w;
+
+            line.Begin();
+            line.Draw(vLine, Color);
+            line.End();
+
+        }
+
+        public static void DrawFilledBox(float x, float y, float w, float h, ColorBGRA Color)
+        {
+            Vector2[] vLine = new Vector2[2];
+
+            line.GLLines = true;
+            line.Antialias = false;
+            line.Width = w;
+
+            vLine[0].X = x + w / 2;
+            vLine[0].Y = y;
+            vLine[1].X = x + w / 2;
+            vLine[1].Y = y + h;
+
+            line.Begin();
+            line.Draw(vLine, Color);
+            line.End();
+        }
+
+        public static void DrawBox(float x, float y, float w, float h, float px, ColorBGRA Color)
+        {
+            DrawLine(x, y, x + w, y, 1, new ColorBGRA(27, 31, 28, 166));
+            DrawLine(x, y, x, y + h, 1, new ColorBGRA(27, 31, 28, 166));
+            DrawLine(x, y + h, x + w, y + h, 1, new ColorBGRA(27, 31, 28, 166));
+            DrawLine(x + w, y, x + w, y + h, 1, new ColorBGRA(27, 31, 28, 166));
+            DrawFilledBox(x, y, w, h, Color);
+            Color.A = 166;
+            DrawFilledBox(x, y + h, w, px, Color);
+            DrawFilledBox(x - px, y, px, h, Color);
+            DrawFilledBox(x + w, y, px, h, Color);
+            Color.A = 177;
+            DrawFilledBox(x, y - px - 10, w, px + 10, Color);
+        }
+
+        #region DrawText
+        public static void DrawShadowText(string text, float x, float y, ColorBGRA color)
+        {
+            font.DrawText(null, text, (int)x, (int)y, color);
+        }
+        #endregion
+
+        public static Font GetFont()
+        {
+            return font;
+        }
+        #endregion
+    }
+    #endregion
+    #region Other
     enum ElementType
     {
-        CHECKBOX, BUTTON, TEXT, CATEGORY
+        CHECKBOX, TEXT, CATEGORY
     }
     internal class EzElement
     {
         public ElementType Type = ElementType.TEXT;
-        public List<EzElement> In = new List<EzElement>();
+        private List<EzElement> Inside = new List<EzElement>();
         public string Content = "";
         public bool isActive = false;
-        public bool isOpen = false;
         public Entity Attached = null;
         public string Data = null;
         public float[] Position = new float[4]{0, 0, 0, 0};
+        public List<EzElement> GetElements()
+        {
+            return Inside;
+        }
+        public void AddElement(EzElement element)
+        {
+            Inside.Add(element);
+        }
         public EzElement(ElementType _Type, string _Content, bool _Active)
         {
             Type = _Type;
@@ -34,6 +153,7 @@ namespace PRubick
             isActive = _Active;
         }
     }
+    #endregion
     #endregion
     internal class EzGUI
     {
@@ -43,6 +163,9 @@ namespace PRubick
         private float w = 300;
         private float h = 250;
         private string title = "EzGUI";
+
+        public bool isMoving = false;
+        public bool isVisible = true;
 
         private int cachedCount = 0;
 
@@ -55,29 +178,60 @@ namespace PRubick
             x = _x;
             y = _y;
             title = _title;
+            Drawer.Init(this);
+            Game.OnWndProc += Game_OnWndProc;
         }
+
+        #region GameAPI
+        void Game_OnWndProc(WndEventArgs args)
+        {
+            if (Game.IsInGame)
+            {
+                switch (args.Msg)
+                {
+                    case (uint)Utils.WindowsMessages.WM_KEYDOWN:
+                        switch (args.WParam)
+                        {
+                            case 0x24:
+                                isVisible = !isVisible;
+                                break;
+                        }
+                        break;
+                    case (uint)Utils.WindowsMessages.WM_LBUTTONDOWN:
+                        MouseClick(Main);
+                        break;
+                }
+            }
+        }
+        #endregion
 
         #region Drawing
         public void Draw()
         {
+            if (isMoving)
+            {
+                Vector2 mPos = Game.MouseScreenPosition;
+                x = mPos.X;
+                y = mPos.Y;
+            }
             DrawBase();
             int i = 0;
-            int iCat = 1;
-            DrawElements(Main.In, ref iCat, ref i);
+            int n = 1;
+            DrawElements(Main.GetElements(), ref n, ref i);
         }
 
-        public void DrawElements(List<EzElement> category, ref int iCat, ref int i)
+        public void DrawElements(List<EzElement> category, ref int n, ref int i)
         {
             foreach (EzElement element in category)
             {
                 i++;
-                DrawElement(element, i, iCat);
+                DrawElement(element, i, n);
                 if (element.Type == ElementType.CATEGORY)
                 {
-                    if (element.isOpen)
+                    if (element.isActive)
                     {
-                        int iCat2 = iCat + 1;
-                        DrawElements(element.In, ref iCat2, ref i);
+                        int n2 = n + 1;
+                        DrawElements(element.GetElements(), ref n2, ref i);
                     }
                 }
             }
@@ -85,51 +239,66 @@ namespace PRubick
 
         public void DrawElement(EzElement element, int i, int incat)
         {
-            byte alpha = 140;
-            if (element.isActive || element.isOpen) alpha = 255;
+            byte alpha = 60;
+            if (element.isActive) alpha = 255;
+            //
             int xoffset = 5 * incat;
             int yoffset = 20;
-            ColorBGRA color = new ColorBGRA(32, 52, 123, alpha);
-            element.Position = new float[4] { x + xoffset, x + xoffset + 15, y + yoffset * i, y + yoffset * i + 13 };
-            if (MouseIn(element.Position)) { color.R = 10; }
+            int width = 15;
+            int height = 15;
+            int textoffset = 10;
+            int menuoffset = 18;
+            //
+            ColorBGRA color = new ColorBGRA(120, 199, 170, alpha);
+            //
+            element.Position = new float[4] { x + xoffset, x + xoffset + width, y + yoffset * i - menuoffset, y + yoffset * i };
+            //
+            if (MouseIn(element.Position)) color.R = 10;
+            //
             switch (element.Type)
             {
                 case ElementType.CATEGORY:
-                    _2DGeometry.DrawFilledBox(element.Position[0], element.Position[2], 15, 15, color);
-                    _2DGeometry.DrawShadowText("> "+element.Content, x + xoffset + 18, y + yoffset * i, new ColorBGRA(12, 0, 222, 255));
+                    Drawer.DrawFilledBox(element.Position[0], element.Position[2], width, height, color);
+                    Drawer.DrawShadowText("> " + element.Content, x + xoffset + menuoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
                     break;
                 case ElementType.CHECKBOX:
-                    _2DGeometry.DrawFilledBox(element.Position[0], element.Position[2], 15, 15, color);
-                    _2DGeometry.DrawShadowText(element.Content, x + xoffset + 18, element.Position[2], new ColorBGRA(12, 0, 222, 255));
+                    Drawer.DrawFilledBox(element.Position[0], element.Position[2], width, height, color);
+                    Drawer.DrawShadowText(element.Content, x + xoffset + menuoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
                     break;
                 case ElementType.TEXT:
-                    _2DGeometry.DrawShadowText(element.Content, element.Position[0], element.Position[2], new ColorBGRA(12, 0, 222, 255));
+                    Drawer.DrawShadowText(element.Content, element.Position[0] + textoffset, element.Position[2], new ColorBGRA(199,199,199, 255));
                     break;
             }
         }
 
         public void DrawBase()
         {
-            h = 30 + (Length() * 20);
-            _2DGeometry.DrawBox(x, y, w, h, 10, new ColorBGRA(209, 219, 222, 90));
-            _2DGeometry.DrawShadowText(title, x + 3, y, new ColorBGRA(0, 0, 0, 255));
-            _2DGeometry.DrawLine(x, y + 13, x + w, y+13, 1,  new ColorBGRA(0,0,0,213));
-            _2DGeometry.DrawShadowText("EzGUI • KiKRee", x+w-85, y + h - 15, new ColorBGRA(40, 48, 51, 255));
+            h = 5 + (Length() * 20);
+            Drawer.DrawBox(x, y, w, h, 10, new ColorBGRA(32, 32, 32, 125));
+            Drawer.DrawShadowText(title, x + 3, y - 15, new ColorBGRA(199, 199, 199, 255));
+            Drawer.DrawShadowText("EzGUI • KiKRee", x+w-85, y + h - 15, new ColorBGRA(40, 48, 51, 255));
         }
         #endregion
 
         #region Methods
-        public void AddMainElement(EzElement en)
+
+        public void SetPos(float _x, float _y)
         {
-            Main.In.Add(en);
+            x = _x;
+            y = _y;
         }
 
-        public void Count(EzElement elem, ref int i)
+        public void AddMainElement(EzElement en)
         {
-            foreach (EzElement element in elem.In)
+            Main.GetElements().Add(en);
+        }
+
+        public void Count(EzElement cat, ref int i)
+        {
+            foreach (EzElement element in cat.GetElements())
             {
                 i++;
-                if (element.Type == ElementType.CATEGORY && element.isOpen) Count(element, ref i);
+                if (element.Type == ElementType.CATEGORY && element.isActive) Count(element, ref i);
             }
         }
 
@@ -147,24 +316,22 @@ namespace PRubick
         #endregion
 
         #region Events
-        public static bool MouseIn(float[] pos)
+        public bool MouseIn(float[] pos)
         {
             if (Game.MouseScreenPosition.X >= pos[0] && Game.MouseScreenPosition.X <= pos[1] && Game.MouseScreenPosition.Y >= pos[2] && Game.MouseScreenPosition.Y <= pos[3]) { return true; }
             else return false;
         }
         
-        public static void MouseClick(EzElement e)
+        public void MouseClick(EzElement cat)
         {
-            foreach (EzElement element in e.In)
+            foreach (EzElement element in cat.GetElements())
             {
                 bool mouseIn = MouseIn(element.Position);
+                if (mouseIn) { element.isActive = !element.isActive; return; }
                 if (element.Type == ElementType.CATEGORY)
-                {
-                    if (mouseIn) element.isOpen = !element.isOpen;
-                    if (element.isOpen) MouseClick(element);
-                }
-                else if (mouseIn) element.isActive = !element.isActive;
+                    if (element.isActive) MouseClick(element);
             }
+
         }
         #endregion
     }
