@@ -91,10 +91,11 @@ namespace AutoArmlet
             if (loaded == false)
             {
                 myHero = ObjectMgr.LocalHero;
-                if (myHero != null) armlet = myHero.FindItem("item_armlet");
                 loaded = true;
                 Console.WriteLine("AutoArmlet succesfully loaded.");
             }
+
+            if (myHero != null && armlet == null) armlet = myHero.FindItem("item_armlet");
 
             if (Utils.SleepCheck("armlet_finding") && armlet == null)
             {
