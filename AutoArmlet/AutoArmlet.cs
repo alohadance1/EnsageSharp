@@ -95,11 +95,9 @@ namespace AutoArmlet
                 Console.WriteLine("AutoArmlet succesfully loaded.");
             }
 
-            if (myHero != null && armlet == null) armlet = myHero.FindItem("item_armlet");
-
-            if (Utils.SleepCheck("armlet_finding") && armlet == null)
+            if (myHero != null && Utils.SleepCheck("armlet_finding"))
             {
-                armlet = myHero.FindItem("item_armlet");
+                if (!myHero.Inventory.Items.Contains(armlet)) armlet = myHero.FindItem("item_armlet");
                 Utils.Sleep(500, "armlet_finding");
             }
 
