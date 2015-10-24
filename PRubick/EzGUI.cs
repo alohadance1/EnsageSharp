@@ -247,7 +247,8 @@ namespace EZGUI
             int width = 15;
             int height = 15;
             int textoffset = 10;
-            int menuoffset = 18;
+            int menuoffset = 15;
+            int twoxoffset = 18;
             //
             ColorBGRA color = new ColorBGRA(120, 199, 170, alpha);
             //
@@ -259,11 +260,11 @@ namespace EZGUI
             {
                 case ElementType.CATEGORY:
                     Drawer.DrawFilledBox(element.Position[0], element.Position[2], width, height, color);
-                    Drawer.DrawShadowText("> " + element.Content, x + xoffset + menuoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
+                    Drawer.DrawShadowText("> " + element.Content, x + xoffset + twoxoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
                     break;
                 case ElementType.CHECKBOX:
                     Drawer.DrawFilledBox(element.Position[0], element.Position[2], width, height, color);
-                    Drawer.DrawShadowText(element.Content, x + xoffset + menuoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
+                    Drawer.DrawShadowText(element.Content, x + xoffset + twoxoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));
                     break;
                 case ElementType.TEXT:
                     Drawer.DrawShadowText(element.Content, element.Position[0] + textoffset, element.Position[2], new ColorBGRA(199, 199, 199, 255));

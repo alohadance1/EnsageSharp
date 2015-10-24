@@ -21,7 +21,7 @@ namespace PRubick
 
         #region Fields
 
-        private static string VERSION = "v2.0.0.1";
+        private static string VERSION = "v2.0.0.2";
         private static bool menuOn = true;
         private static bool loaded = false;
 
@@ -39,6 +39,7 @@ namespace PRubick
 			1000, 1400
 		};
 
+        private static List<Hero> uiHeroes = new List<Hero>();
         private static List<Hero> lastSpellIsChecked = new List<Hero>();
         private static Dictionary<string, string> abilitiesFix = new Dictionary<string, string>();
         private static List<string> includedAbilities = new List<string>();
@@ -75,9 +76,9 @@ namespace PRubick
                 gui.AddMainElement(enabled);
                 gui.AddMainElement(stealIfHave);
                 gui.AddMainElement(lastSpell);
-                gui.AddMainElement(new EzElement(ElementType.TEXT, "Rubick / Рубик", false));
+                gui.AddMainElement(new EzElement(ElementType.TEXT, "Rubick / Рубик (heroes appear gradually)", false));
                 gui.AddMainElement(spcat);
-                
+                uiHeroes.Clear();
                 myHero = ObjectMgr.LocalHero;
                 spellSteal = myHero.Spellbook.SpellR;
                 loaded = true;
@@ -102,15 +103,14 @@ namespace PRubick
                     Utils.Sleep(1000, "GUI_ABILITIES");
                 }
 
-                if (heroes == null)
+                if (Utils.SleepCheck("uiheroesupdate"))
                 {
-                    heroes = new EzElement(ElementType.CATEGORY, "Heroes / Герои", false);
-                    List<Player> players = ObjectMgr.GetEntities<Player>().Where(p => p != null && p.Hero != null && !p.IsFakeClient && p.Team != myHero.Team).ToList();
-                    foreach (Player player in players)
+                    if (heroes == null) { heroes = new EzElement(ElementType.CATEGORY, "Heroes / Герои", false); spcat.AddElement(heroes); }
+                    List<Hero> _heroes = ObjectMgr.GetEntities<Hero>().Where(p => !p.IsIllusion && p.Team != myHero.Team).ToList();
+                    foreach (Hero enemy in _heroes)
                     {
-                        try
+                        if (!uiHeroes.Contains(enemy))
                         {
-                            var enemy = player.Hero;
                             var hero = new EzElement(ElementType.CATEGORY, enemy.Name.Replace("_", "").Replace("npcdotahero", ""), false);
                             foreach (Ability ability in enemy.Spellbook.Spells)
                             {
@@ -120,11 +120,10 @@ namespace PRubick
                                 hero.AddElement(new EzElement(ElementType.CHECKBOX, ability.Name, ac));
                             }
                             heroes.AddElement(hero);
+                            uiHeroes.Add(enemy);
                         }
-                        catch (Ensage.EntityNotFoundException) { heroes = null; }
-
                     }
-                    spcat.AddElement(heroes);
+                    Utils.Sleep(2000, "uiheroesupdate");
                 }
                 #endregion
                 foreach (Hero enemy in enemies)
