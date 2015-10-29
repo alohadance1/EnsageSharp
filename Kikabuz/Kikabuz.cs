@@ -64,7 +64,7 @@ namespace Kikabuz
                     case (uint)Utils.WindowsMessages.WM_KEYUP:
                         switch (args.WParam)
                         {
-                            case 'T':
+                            case 'B':
                                 GoAbuze();
                                 break;
                         }
